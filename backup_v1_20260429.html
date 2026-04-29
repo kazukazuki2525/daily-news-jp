@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily News Japan</title>
+<style>
+:root{color-scheme:light dark;--bg:#f5f5f7;--card-bg:#fff;--text:#1d1d1f;--text-secondary:#6e6e73;--accent:#0071e3;--accent-light:#e1f0ff;--border:#d2d2d7;--shadow:0 1px 4px rgba(0,0,0,.06);--shadow-hover:0 6px 20px rgba(0,0,0,.1);--radius:14px;--section-top:#ff3b30;--section-domestic:#007aff;--section-international:#af52de;--section-business:#34c759;--section-tech:#ff9500;--section-other:#8e8e93}
+@media(prefers-color-scheme:dark){:root{--bg:#1c1c1e;--card-bg:#2c2c2e;--text:#f5f5f7;--text-secondary:#98989d;--accent:#0a84ff;--accent-light:#1c3a5e;--border:#3a3a3c;--shadow:0 1px 4px rgba(0,0,0,.2);--shadow-hover:0 6px 20px rgba(0,0,0,.3)}}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP','Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;-webkit-font-smoothing:antialiased}
+.container{max-width:720px;margin:0 auto;padding:0 20px}
+.header{border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);background:rgba(255,255,255,.85)}
+@media(prefers-color-scheme:dark){.header{background:rgba(28,28,30,.85)}}
+.header-inner{max-width:720px;margin:0 auto;padding:16px 20px}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.header h1{font-size:20px;font-weight:700;letter-spacing:-.3px}
+.header-meta{font-size:12px;color:var(--text-secondary)}
+.date-nav{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.date-nav::-webkit-scrollbar{display:none}
+.date-tab{flex-shrink:0;padding:8px 18px;border-radius:22px;border:none;background:var(--bg);font-size:13px;font-weight:500;cursor:pointer;transition:all .25s ease;white-space:nowrap;color:var(--text-secondary)}
+.date-tab:hover{color:var(--accent);background:var(--accent-light)}
+.date-tab.active{background:var(--accent);color:#fff;font-weight:600}
+.content{padding:20px 0 60px}
+.state-msg{text-align:center;padding:80px 20px;color:var(--text-secondary)}
+.state-msg .icon{font-size:48px;margin-bottom:16px}
+.state-msg .title{font-size:17px;font-weight:600;margin-bottom:6px;color:var(--text)}
+.state-msg .desc{font-size:14px}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.news-meta{display:flex;align-items:center;gap:16px;font-size:13px;color:var(--text-secondary);margin-bottom:20px;padding:12px 16px;background:var(--card-bg);border-radius:var(--radius);box-shadow:var(--shadow);flex-wrap:wrap}
+.news-meta .stat{display:flex;align-items:center;gap:5px}
+.cat-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.cat-btn{font-size:12px;font-weight:500;padding:6px 14px;border-radius:18px;border:1.5px solid var(--border);background:var(--card-bg);cursor:pointer;transition:all .2s;color:var(--text-secondary)}
+.cat-btn:hover{border-color:var(--accent);color:var(--accent)}
+.cat-btn.active{background:var(--accent-light);border-color:var(--accent);color:var(--accent);font-weight:600}
+.section{margin-bottom:28px}
+.section-title{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.section-badge{font-size:12px;font-weight:700;padding:4px 12px;border-radius:10px;color:#fff;letter-spacing:.3px}
+.section-count{font-size:12px;color:var(--text-secondary)}
+.article{background:var(--card-bg);border-radius:var(--radius);padding:16px 18px;margin-bottom:10px;box-shadow:var(--shadow);transition:all .25s ease;cursor:default;border-left:4px solid transparent}
+.article:hover{box-shadow:var(--shadow-hover);transform:translateY(-1px)}
+.article-title{font-size:15px;font-weight:600;margin-bottom:6px;line-height:1.5;letter-spacing:-.1px}
+.article-summary{font-size:13.5px;color:var(--text-secondary);line-height:1.8}
+.footer{text-align:center;padding:24px 0 40px;font-size:12px;color:var(--text-secondary);border-top:1px solid var(--border)}
+@media(max-width:480px){.header-inner{padding:12px 16px}.header h1{font-size:17px}.date-tab{padding:6px 14px;font-size:12px}.article{padding:14px 15px}}
+</style>
+</head>
+<body>
+<div class="header"><div class="header-inner"><div class="header-top"><h1>Daily News Japan</h1><span class="header-meta" id="headerMeta"></span></div><div class="date-nav" id="dateNav"></div></div></div>
+<div class="container"><div class="content" id="content"><div class="state-msg"><div class="spinner"></div><div class="desc">ニュースを読み込んでいます...</div></div></div></div>
+<script>
+const SECTION_COLORS={'トップニュース':'var(--section-top)','トップ':'var(--section-top)','国内':'var(--section-domestic)','社会':'var(--section-domestic)','国際':'var(--section-international)','経済・ビジネス':'var(--section-business)','経済':'var(--section-business)','ビジネス':'var(--section-business)','テクノロジー':'var(--section-tech)','テクノロジー・その他':'var(--section-tech)','テクノロジー / その他':'var(--section-tech)','スポーツ':'var(--section-other)','エンタメ':'var(--section-other)'};
+function getSectionColor(n){for(const[k,c]of Object.entries(SECTION_COLORS)){if(n.includes(k)||k.includes(n))return c}return'var(--section-other)'}
+let newsData={},dateList=[],currentDate=null,currentCat='all';
+async function init(){try{const r=await fetch('data/index.json');if(!r.ok)throw new Error('index.json not found');const idx=await r.json();dateList=idx.dates.sort((a,b)=>b.localeCompare(a));const results=await Promise.allSettled(dateList.map(d=>fetch('data/'+d+'.json').then(r=>r.ok?r.json():null)));results.forEach((r,i)=>{if(r.status==='fulfilled'&&r.value)newsData[dateList[i]]=r.value});dateList=dateList.filter(d=>newsData[d]);if(!dateList.length){showState('empty');return}currentDate=dateList[0];document.getElementById('headerMeta').textContent=dateList.length+'日分のニュース';renderDateNav();renderNews()}catch(e){showState('error',e.message)}}
+function showState(t,m){const el=document.getElementById('content');if(t==='empty')el.innerHTML='<div class="state-msg"><div class="icon">📭</div><div class="title">ニュースがありません</div><div class="desc">まだデータが追加されていません。</div></div>';else if(t==='error')el.innerHTML='<div class="state-msg"><div class="icon">⚠️</div><div class="title">読み込みエラー</div><div class="desc">'+(m||'データの取得に失敗しました')+'</div></div>'}
+function renderDateNav(){const nav=document.getElementById('dateNav');const wd=['日','月','火','水','木','金','土'];nav.innerHTML=dateList.map(d=>{const dt=new Date(d+'T00:00:00');const lb=(dt.getMonth()+1)+'/'+dt.getDate()+' ('+wd[dt.getDay()]+')';return'<button class="date-tab '+(d===currentDate?'active':'')+'" onclick="selectDate(\''+d+'\')">'+lb+'</button>'}).join('')}
+function selectDate(d){currentDate=d;currentCat='all';renderDateNav();renderNews();window.scrollTo({top:0,behavior:'smooth'})}
+function selectCat(c){currentCat=c;renderNews()}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function renderNews(){const news=newsData[currentDate];if(!news)return;const dt=new Date(news.date+'T00:00:00');const wd=['日','月','火','水','木','金','土'];const dl=dt.getFullYear()+'年'+(dt.getMonth()+1)+'月'+dt.getDate()+'日 ('+wd[dt.getDay()]+')';const ta=news.sections.reduce((s,sec)=>s+sec.articles.length,0);const filtered=currentCat==='all'?news.sections:news.sections.filter(s=>s.name===currentCat);let h='';h+='<div class="news-meta"><span class="stat">📅 '+dl+'</span><span class="stat">📄 '+ta+'件</span>'+(news.timestamp?'<span class="stat">🕐 '+esc(news.timestamp)+'</span>':'')+'</div>';h+='<div class="cat-filters"><button class="cat-btn '+(currentCat==='all'?'active':'')+'" onclick="selectCat(\'all\')">すべて</button>';for(const s of news.sections){h+='<button class="cat-btn '+(currentCat===s.name?'active':'')+'" onclick="selectCat(\''+esc(s.name)+'\')">'+esc(s.name)+' ('+s.articles.length+')</button>'}h+='</div>';for(const sec of filtered){const color=getSectionColor(sec.name);h+='<div class="section"><div class="section-title"><span class="section-badge" style="background:'+color+'">'+esc(sec.name)+'</span><span class="section-count">'+sec.articles.length+'件</span></div>';for(const art of sec.articles){h+='<div class="article" style="border-left-color:'+color+'"><div class="article-title">'+esc(art.title)+'</div><div class="article-summary">'+esc(art.summary)+'</div></div>'}h+='</div>'}h+='<div class="footer">Powered by Claude Cowork — 毎朝自動更新</div>';document.getElementById('content').innerHTML=h}
+init();
+</script>
+</body></html>
