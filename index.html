@@ -141,10 +141,6 @@ body {
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.expand-toggle.all-expanded .icon {
-  transform: rotate(180deg);
-}
-
 /* Refresh Button */
 .refresh-btn {
   background: var(--bg-secondary);
@@ -384,10 +380,8 @@ body {
   padding: 14px 16px;
   margin-bottom: 8px;
   transition: all var(--transition);
-  cursor: pointer;
+  cursor: default;
   position: relative;
-  -webkit-user-select: none;
-  user-select: none;
 }
 
 .article-card::before {
@@ -412,99 +406,18 @@ body {
 
 .article-card:hover::before { opacity: 1; }
 
-.article-card.expanded {
-  background: var(--card-bg-hover);
-  border-color: var(--accent);
-  box-shadow: var(--shadow-md);
-}
-
-.article-card.expanded::before { opacity: 1; }
-
-.article-title-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
 .article-title {
   font-size: 14px;
   font-weight: 600;
   margin-bottom: 5px;
   line-height: 1.55;
   letter-spacing: -0.01em;
-  flex: 1;
-}
-
-.article-chevron {
-  flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 2px;
-  color: var(--text-tertiary);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), color var(--transition);
-  font-size: 12px;
-}
-
-.article-card.expanded .article-chevron {
-  transform: rotate(180deg);
-  color: var(--accent);
-}
-
-.article-summary-wrap {
-  overflow: hidden;
-  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
-}
-
-.article-summary-wrap.collapsed {
-  max-height: 3.5em;
-  position: relative;
-}
-
-.article-summary-wrap.collapsed::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1.5em;
-  background: linear-gradient(transparent, var(--card-bg));
-  pointer-events: none;
-  transition: background var(--transition);
-}
-
-.article-card:hover .article-summary-wrap.collapsed::after {
-  background: linear-gradient(transparent, var(--card-bg-hover));
-}
-
-.article-card.expanded .article-summary-wrap.collapsed::after {
-  background: linear-gradient(transparent, var(--card-bg-hover));
-}
-
-.article-summary-wrap.expanded {
-  max-height: 500px;
 }
 
 .article-summary {
   font-size: 13px;
   color: var(--text-secondary);
   line-height: 1.75;
-}
-
-.article-expand-hint {
-  font-size: 11px;
-  color: var(--accent);
-  margin-top: 6px;
-  font-weight: 500;
-  opacity: 0;
-  transition: opacity var(--transition);
-}
-
-.article-card:hover .article-expand-hint,
-.article-card.expanded .article-expand-hint {
-  opacity: 1;
 }
 
 /* Footer */
@@ -534,9 +447,6 @@ body {
       <h1>Daily News Japan</h1>
       <span class="header-meta" id="headerMeta"></span>
       <div class="header-actions">
-        <button class="icon-btn expand-toggle" id="expandToggle" onclick="toggleAllExpand()" title="すべて展開/折りたたみ">
-          <span class="icon" id="expandIcon">▼</span>
-        </button>
         <button class="icon-btn" onclick="toggleTheme()" title="テーマ切り替え">
           <span class="icon" id="themeIcon">🌙</span>
         </button>
@@ -580,8 +490,6 @@ let newsData = {};
 let dateList = [];
 let currentDate = null;
 let currentCat = 'all';
-let allExpanded = false;
-let articleIdCounter = 0;
 
 // Section colors
 const SECTION_COLORS = {
@@ -612,66 +520,6 @@ function esc(str) {
   const d = document.createElement('div');
   d.textContent = str;
   return d.innerHTML;
-}
-
-// Expand / Collapse
-function toggleArticle(id) {
-  const card = document.getElementById('card-' + id);
-  const wrap = document.getElementById('wrap-' + id);
-  const hint = document.getElementById('hint-' + id);
-  if (!card || !wrap) return;
-
-  const isExpanded = card.classList.contains('expanded');
-  if (isExpanded) {
-    card.classList.remove('expanded');
-    wrap.classList.remove('expanded');
-    wrap.classList.add('collapsed');
-    if (hint) hint.textContent = 'タップで展開';
-  } else {
-    card.classList.add('expanded');
-    wrap.classList.remove('collapsed');
-    wrap.classList.add('expanded');
-    if (hint) hint.textContent = 'タップで折りたたみ';
-  }
-  updateExpandToggleState();
-}
-
-function toggleAllExpand() {
-  allExpanded = !allExpanded;
-  document.querySelectorAll('.article-card').forEach(card => {
-    const id = card.id.replace('card-', '');
-    const wrap = document.getElementById('wrap-' + id);
-    const hint = document.getElementById('hint-' + id);
-    if (!wrap) return;
-
-    if (allExpanded) {
-      card.classList.add('expanded');
-      wrap.classList.remove('collapsed');
-      wrap.classList.add('expanded');
-      if (hint) hint.textContent = 'タップで折りたたみ';
-    } else {
-      card.classList.remove('expanded');
-      wrap.classList.remove('expanded');
-      wrap.classList.add('collapsed');
-      if (hint) hint.textContent = 'タップで展開';
-    }
-  });
-  updateExpandToggleState();
-}
-
-function updateExpandToggleState() {
-  const cards = document.querySelectorAll('.article-card');
-  const expandedCount = document.querySelectorAll('.article-card.expanded').length;
-  const toggle = document.getElementById('expandToggle');
-  if (expandedCount === cards.length && cards.length > 0) {
-    allExpanded = true;
-    toggle.classList.add('all-expanded');
-    toggle.title = 'すべて折りたたむ';
-  } else {
-    allExpanded = false;
-    toggle.classList.remove('all-expanded');
-    toggle.title = 'すべて展開';
-  }
 }
 
 // Data loading
@@ -723,7 +571,6 @@ async function loadData() {
     }
 
     currentDate = dateList[0];
-    allExpanded = false;
     document.getElementById('headerMeta').textContent = dateList.length + '日分のニュース';
     renderDateNav();
     renderNews();
@@ -757,10 +604,8 @@ function renderDateNav() {
 function selectDate(d) {
   currentDate = d;
   currentCat = 'all';
-  allExpanded = false;
   renderDateNav();
   renderNews();
-  updateExpandToggleState();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -772,8 +617,6 @@ function selectCat(c) {
 function renderNews() {
   const news = newsData[currentDate];
   if (!news) return;
-
-  articleIdCounter = 0;
 
   const dt = new Date(news.date + 'T00:00:00');
   const wd = ['日','月','火','水','木','金','土'];
@@ -812,20 +655,9 @@ function renderNews() {
     </div>`;
 
     for (const art of sec.articles) {
-      const aid = articleIdCounter++;
-      const expandedClass = allExpanded ? ' expanded' : '';
-      const wrapClass = allExpanded ? 'expanded' : 'collapsed';
-      const hintText = allExpanded ? 'タップで折りたたみ' : 'タップで展開';
-
-      h += `<div class="article-card${expandedClass}" id="card-${aid}" style="--card-accent:${color}" onclick="toggleArticle(${aid})">
-        <div class="article-title-row">
-          <div class="article-title">${esc(art.title)}</div>
-          <div class="article-chevron">▼</div>
-        </div>
-        <div class="article-summary-wrap ${wrapClass}" id="wrap-${aid}">
-          <div class="article-summary">${esc(art.summary)}</div>
-        </div>
-        <div class="article-expand-hint" id="hint-${aid}">${hintText}</div>
+      h += `<div class="article-card" style="--card-accent:${color}">
+        <div class="article-title">${esc(art.title)}</div>
+        <div class="article-summary">${esc(art.summary)}</div>
       </div>`;
     }
 
