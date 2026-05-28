@@ -487,11 +487,9 @@ function applyTheme() {
 
 // State
 let newsData = {};
-let allDates = [];   // index.json の全日付（降順）
-let dateList = [];   // 読み込み済みの日付
+let dateList = [];
 let currentDate = null;
 let currentCat = 'all';
-const PAGE_SIZE = 7; // 1回に読み込む日数
 
 // Section colors
 const SECTION_COLORS = {
@@ -524,27 +522,7 @@ function esc(str) {
   return d.innerHTML;
 }
 
-// Fetch a batch of dates and add to newsData
-async function fetchDates(dates, showProgress) {
-  const total = dates.length;
-  for (let i = 0; i < total; i++) {
-    if (showProgress) {
-      const pct = Math.round(((i + 1) / total) * 100);
-      const loadingText = document.getElementById('loadingText');
-      const progressBar = document.getElementById('progressBar');
-      if (loadingText) loadingText.textContent = `ニュースを読み込み中... (${i + 1}/${total})`;
-      if (progressBar) progressBar.style.width = pct + '%';
-    }
-    try {
-      const r = await fetch('data/' + dates[i] + '.json');
-      if (r.ok) newsData[dates[i]] = await r.json();
-    } catch (e) {
-      console.warn('Failed to load:', dates[i], e);
-    }
-  }
-}
-
-// Initial load — fetch index + first PAGE_SIZE days
+// Data loading
 async function loadData() {
   const refreshBtn = document.querySelector('.refresh-btn');
   refreshBtn.classList.add('loading');
@@ -559,11 +537,9 @@ async function loadData() {
     const res = await fetch('data/index.json');
     if (!res.ok) throw new Error('index.json not found');
     const idx = await res.json();
-    allDates = idx.dates.sort((a, b) => b.localeCompare(a));
+    dateList = idx.dates.sort((a, b) => b.localeCompare(a));
 
-    // Load only first PAGE_SIZE days
-    const initialDates = allDates.slice(0, PAGE_SIZE);
-    const total = initialDates.length;
+    const total = dateList.length;
     document.getElementById('content').innerHTML = `
       <div class="state-msg">
         <div class="spinner"></div>
@@ -572,10 +548,22 @@ async function loadData() {
       </div>`;
 
     newsData = {};
-    await fetchDates(initialDates, true);
-    fetchedUpTo = initialDates.length;
+    for (let i = 0; i < dateList.length; i++) {
+      const pct = Math.round(((i + 1) / total) * 100);
+      const loadingText = document.getElementById('loadingText');
+      const progressBar = document.getElementById('progressBar');
+      if (loadingText) loadingText.textContent = `ニュースを読み込み中... (${i + 1}/${total})`;
+      if (progressBar) progressBar.style.width = pct + '%';
 
-    dateList = initialDates.filter(d => newsData[d]);
+      try {
+        const r = await fetch('data/' + dateList[i] + '.json');
+        if (r.ok) newsData[dateList[i]] = await r.json();
+      } catch (e) {
+        console.warn('Failed to load:', dateList[i], e);
+      }
+    }
+
+    dateList = dateList.filter(d => newsData[d]);
 
     if (!dateList.length) {
       showState('empty');
@@ -583,7 +571,7 @@ async function loadData() {
     }
 
     currentDate = dateList[0];
-    updateHeaderMeta();
+    document.getElementById('headerMeta').textContent = dateList.length + '日分のニュース';
     renderDateNav();
     renderNews();
   } catch (e) {
@@ -591,38 +579,6 @@ async function loadData() {
   } finally {
     refreshBtn.classList.remove('loading');
   }
-}
-
-// Track how many dates from allDates we've attempted to fetch
-let fetchedUpTo = 0;
-
-// Load more — fetch next PAGE_SIZE days
-async function loadMore() {
-  const btn = document.getElementById('loadMoreBtn');
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = '読み込み中...';
-  }
-
-  const nextDates = allDates.slice(fetchedUpTo, fetchedUpTo + PAGE_SIZE);
-  if (!nextDates.length) return;
-
-  await fetchDates(nextDates, false);
-  fetchedUpTo += nextDates.length;
-
-  const newLoaded = nextDates.filter(d => newsData[d]);
-  dateList = dateList.concat(newLoaded);
-
-  updateHeaderMeta();
-  renderDateNav();
-  renderNews();
-}
-
-function updateHeaderMeta() {
-  const total = allDates.length;
-  const loaded = dateList.length;
-  document.getElementById('headerMeta').textContent =
-    loaded < total ? `${loaded}日分表示中（全${total}日分）` : `${total}日分のニュース`;
 }
 
 function showState(type, msg) {
@@ -707,29 +663,6 @@ function renderNews() {
 
     h += `</div>`;
   }
-
-    // 「もっと読み込む」ボタン（まだ未読み込みの日付がある場合）
-    const loadedCount = dateList.length;
-    const totalCount = allDates.length;
-    if (loadedCount < totalCount) {
-      const remaining = totalCount - loadedCount;
-      h += `<div style="text-align:center; padding: 20px 0 8px;">
-        <button id="loadMoreBtn" onclick="loadMore()" style="
-          background: var(--accent-light);
-          color: var(--accent);
-          border: 1px solid var(--accent);
-          border-radius: var(--radius-full);
-          padding: 10px 28px;
-          font-size: 14px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all var(--transition);
-        " onmouseover="this.style.background='var(--accent)';this.style.color='white'"
-           onmouseout="this.style.background='var(--accent-light)';this.style.color='var(--accent)'">
-          過去のニュースをもっと見る（残り${remaining}日分）
-        </button>
-      </div>`;
-    }
 
     h += `<div class="footer"></div>`;
   document.getElementById('content').innerHTML = h;
